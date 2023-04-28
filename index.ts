@@ -46,7 +46,7 @@ const ask = (question: string) => {
 }
 
 const showLoading = () => {
-  const spinnerChars = ['-', '\\', '|', '/'];
+  const spinnerChars = ['-  ', '\\  ', '|  ', '/  '];
 
   let spinnerIndex = 0;
 
