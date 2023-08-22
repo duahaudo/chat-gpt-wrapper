@@ -28,17 +28,21 @@ export const createConversationStream = async () => {
   }
 }
 
-const getStreamData = (stream: Stream, chunkHandler: (x: string) => void): Promise<any> => {
+const getStreamData = (
+  stream: Stream,
+  chunkHandler: (x: string) => void
+): Promise<{ content: string; role: string }> => {
   return new Promise((resolve, reject) => {
-    let data: { content: string; role: string } = { content: '', role: '' }
+    const data: { content: string; role: string } = { content: '', role: '' }
+    const lines: string[] = []
+
     stream.on('data', (chunk) => {
-      chunkHandler(chunk.toString())
+      const chunkString = chunk.toString()
+      chunkHandler(chunkString)
+      lines.push(...chunkString.split('\n'))
+    })
 
-      const lines: string[] = chunk
-        .toString()
-        .split('\n')
-        .filter((line: string) => line.trim() !== '')
-
+    stream.on('end', () => {
       for (const line of lines) {
         const { content, role } = getData(line)
 
@@ -50,10 +54,10 @@ const getStreamData = (stream: Stream, chunkHandler: (x: string) => void): Promi
           data.content += content
         }
       }
-    })
-    stream.on('end', () => {
+
       resolve(data)
     })
+
     stream.on('error', (err) => {
       reject(err)
     })
