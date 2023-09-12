@@ -161,6 +161,42 @@ class OpenAIWrapper {
       }
     })
   }
+
+  private embedFile(content: string): Promise<any> {
+    const endpoint = 'embeddings'
+    const requestBody = {
+      input: 'Embed the following file content: ' + content,
+      model: 'text-embedding-ada-002',
+    }
+
+    return axios.post(endpoint, requestBody).catch((err) => console.error(err))
+  }
+
+  async embed(filePath: string) {
+    let fileContent = ''
+
+    try {
+      const resolvedPath = path.resolve(
+        filePath.replace(/^~(?=\/|\\|$)/, process.env.HOME || process.env.USERPROFILE || '')
+      )
+      fileContent = await fs.readFile(path.resolve(resolvedPath), 'utf8')
+    } catch (error) {
+      console.error(error)
+    }
+
+    const { data } = await this.embedFile(fileContent)
+    console.log(
+      `🚀 SLOG (${new Date().toLocaleTimeString()}): ➡ OpenAIWrapper ➡ embed ➡ response:`,
+      data
+    )
+    const embeddings = data.choices[0]
+    console.log(
+      `🚀 SLOG (${new Date().toLocaleTimeString()}): ➡ OpenAIWrapper ➡ embed ➡ embeddings:`,
+      embeddings
+    )
+
+    return ''
+  }
 }
 
 export default OpenAIWrapper

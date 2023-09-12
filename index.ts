@@ -18,7 +18,7 @@ const rl = readline.createInterface({
   terminal: false,
 })
 
-const ask = (question: string) => {
+const ask = (question: string): Promise<string> => {
   return new Promise((resolve) => {
     rl.question(`${COLOR.green}${question} `, (answer: string) => {
       resolve(answer)
@@ -65,8 +65,12 @@ const displayResponse = (content: string) => {
   process.stdout.write(`${COLOR.cyan}${content}${COLOR.reset}`)
 }
 
-const newConversationSymbol = '+'
-const systemMessageSymbol = '$'
+enum SYMBOL {
+  continueConversation = '&',
+  systemMessage = '$',
+  embeddedMessage = '@',
+}
+
 const username = `Stiger`
 const newQuestion: string = `\n❓`
 
@@ -80,22 +84,34 @@ const newQuestion: string = `\n❓`
     while (!!question) {
       // first character need to be `+` to continue conversation
       const firstChar = question[0]
-      const isNewQuestion = firstChar === newConversationSymbol
-      const isSystemMessage = firstChar === systemMessageSymbol
+      const isNewQuestion = firstChar !== SYMBOL.continueConversation
+      const isSystemMessage = firstChar === SYMBOL.systemMessage
 
       const closeLoadingFn = !isSystemMessage ? showLoading() : null
 
       if (isNewQuestion) {
         helper = new OpenAIWrapper()
       }
-      await helper.prompt(
-        question.replace(newConversationSymbol, ''),
-        (message: string) => {
+
+      if (firstChar === SYMBOL.embeddedMessage) {
+        try {
+          const response = await helper.embed(question.replace(SYMBOL.embeddedMessage, ''))
           closeLoadingFn && closeLoadingFn(true)
-          displayResponse(message)
-        },
-        isSystemMessage
-      )
+          displayResponse(response)
+        } catch (error) {
+          closeLoadingFn && closeLoadingFn(true)
+          displayResponse((error as any).message)
+        }
+      } else {
+        await helper.prompt(
+          question.replace(SYMBOL.continueConversation, ''),
+          (message: string) => {
+            closeLoadingFn && closeLoadingFn(true)
+            displayResponse(message)
+          },
+          isSystemMessage
+        )
+      }
 
       // trick to keep console output
       console.log()
