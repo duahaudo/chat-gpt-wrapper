@@ -1,6 +1,7 @@
 import axios, { Message } from './axios'
 import { Stream } from 'stream'
 import 'dotenv/config'
+import fs from 'fs/promises'
 
 class OpenAIWrapper {
   private createMessage = (msg: string) => ({ role: 'user', content: msg })
@@ -36,11 +37,25 @@ class OpenAIWrapper {
 
         return { content, role }
       } catch {
+        // track log
+        this.writeToErrorLog(jsonString)
         return { content: jsonString, role: 'user' }
       }
     }
 
     return {}
+  }
+
+  private async writeToErrorLog(jsonString: string) {
+    try {
+      const timestamp = new Date().toISOString() // Get current timestamp
+      const logString = `${timestamp} ${jsonString} \n` // Prepend timestamp to JSON string
+
+      await fs.appendFile('./error.log', logString + '\n\n') // Append log string to error.log file
+      console.log('Data written to error.log successfully.')
+    } catch (error) {
+      console.error('Error writing to error.log:', error)
+    }
   }
 
   getStreamData(
