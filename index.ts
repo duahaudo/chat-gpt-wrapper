@@ -80,7 +80,7 @@ const newQuestion: string = `\n❓`
     while (!!question) {
       // first character need to be `+` to continue conversation
       const firstChar = question[0]
-      const isNewQuestion = firstChar !== newConversationSymbol
+      const isNewQuestion = firstChar === newConversationSymbol
       const isSystemMessage = firstChar === systemMessageSymbol
 
       const closeLoadingFn = !isSystemMessage ? showLoading() : null
