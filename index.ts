@@ -65,6 +65,8 @@ const displayResponse = (content: string) => {
   process.stdout.write(`${COLOR.cyan}${content}${COLOR.reset}`)
 }
 
+const newConversationSymbol = '+'
+const systemMessageSymbol = '$'
 const username = `Stiger`
 const newQuestion: string = `\n❓`
 
@@ -78,17 +80,22 @@ const newQuestion: string = `\n❓`
     while (!!question) {
       // first character need to be `+` to continue conversation
       const firstChar = question[0]
-      const isNewQuestion = firstChar !== '+'
+      const isNewQuestion = firstChar !== newConversationSymbol
+      const isSystemMessage = firstChar === systemMessageSymbol
 
-      const closeLoadingFn = showLoading()
+      const closeLoadingFn = !isSystemMessage ? showLoading() : null
 
       if (isNewQuestion) {
         helper = new OpenAIWrapper()
       }
-      await helper.prompt(isNewQuestion ? question.slice(1) : question, (message: string) => {
-        closeLoadingFn(true)
-        displayResponse(message)
-      })
+      await helper.prompt(
+        question.replace(newConversationSymbol, ''),
+        (message: string) => {
+          closeLoadingFn && closeLoadingFn(true)
+          displayResponse(message)
+        },
+        isSystemMessage
+      )
 
       // trick to keep console output
       console.log()

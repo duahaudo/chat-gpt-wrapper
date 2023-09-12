@@ -2,35 +2,34 @@ import axios, { Message } from './axios'
 import { Stream } from 'stream'
 import 'dotenv/config'
 import fs from 'fs/promises'
+import path from 'path'
 
 class OpenAIWrapper {
-  private createMessage = (msg: string) => ({ role: 'user', content: msg })
+  private createMessage = (msg: string) => ({ role: 'system', content: msg })
   private history: any[] = []
 
   constructor() {
     this.history = []
   }
 
-  async prompt(msg: string, postMessageFn: (x: string) => void) {
+  async prompt(msg: string, postMessageFn: (x: string) => void, isSystem?: boolean) {
     this.history.push(this.createMessage(msg))
-    return this.askChatGPTStreamHandler([...this.history], postMessageFn)
-  }
 
-  async createConversationStream() {
-    return async (message: string, postMessageFn: (x: string) => void) => {
-      this.history.push(this.createMessage(message))
-      const response = await this.askChatGPTStreamHandler([...this.history], postMessageFn)
-      this.history.push(response)
-
-      return response
+    if (!isSystem) {
+      return this.askChatGPTStreamHandler([...this.history], postMessageFn)
     }
+
+    return Promise.resolve('')
   }
 
   getData(line: string) {
     if (!line.includes('data: [DONE]')) {
       const jsonString = line.substring(line.indexOf('{'), line.lastIndexOf('}') + 1)
-
       try {
+        if (!jsonString) {
+          return { content: '', role: 'assistant' }
+        }
+
         const message = JSON.parse(jsonString)
         const { choices } = message
         const { content, role } = choices[0].delta
@@ -39,7 +38,7 @@ class OpenAIWrapper {
       } catch {
         // track log
         this.writeToErrorLog(jsonString)
-        return { content: jsonString, role: 'user' }
+        return { content: jsonString, role: 'assistant' }
       }
     }
 
@@ -49,10 +48,9 @@ class OpenAIWrapper {
   private async writeToErrorLog(jsonString: string) {
     try {
       const timestamp = new Date().toISOString() // Get current timestamp
-      const logString = `${timestamp} ${jsonString} \n` // Prepend timestamp to JSON string
+      const logString = `${timestamp} ${jsonString}` // Prepend timestamp to JSON string
 
-      await fs.appendFile('./error.log', logString + '\n\n') // Append log string to error.log file
-      console.log('Data written to error.log successfully.')
+      await fs.appendFile(path.join('./error.log'), logString + '\n') // Append log string to error.log file
     } catch (error) {
       console.error('Error writing to error.log:', error)
     }
@@ -110,13 +108,13 @@ class OpenAIWrapper {
     }
   }
 
-  async askChatGPTStream(message: Message[]): Promise<Stream> {
+  async askChatGPTStream(messages: Message[]): Promise<Stream> {
     return new Promise(async (resolve) => {
       try {
         const request = {
           model: 'gpt-3.5-turbo',
           stream: true,
-          messages: message,
+          messages,
         }
 
         const response = await axios.post('chat/completions', request, {
