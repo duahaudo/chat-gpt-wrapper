@@ -5,6 +5,8 @@ import axios from 'axios'
 import readline from 'readline'
 import { createConversationStream } from './helper'
 
+import OpenAIWrapper from './helper/openAI'
+
 // Define the colors
 enum COLOR {
   reset = '\x1b[0m',
@@ -142,22 +144,23 @@ const newQuestion: string = `\n❓`
     console.log(`\n🫡   Hello ${COLOR.cyan}${username}${COLOR.reset}`)
 
     let question: any = await ask(newQuestion)
+    let helper = new OpenAIWrapper()
 
-    if (question) {
-      let conversationFn = await createConversationStream()
+    while (!!question) {
+      // first character need to be `+` to continue conversation
+      const firstChar = question[0]
+      const isNewQuestion = firstChar !== '+'
 
-      while (!!question) {
-        const showMessage = display2()
-        await conversationFn(question, showMessage)
-        console.log()
-        // console.log(`\n🙇 ${COLOR.magenta}100 tokens used${COLOR.reset}`)
-        question = await ask(newQuestion)
-
-        if (question === COMMAND.newChat) {
-          question = await ask(newQuestion)
-          conversationFn = await createConversationStream()
-        }
+      if (isNewQuestion) {
+        helper = new OpenAIWrapper()
       }
+      await helper.prompt(isNewQuestion ? question.slice(1) : question, (content: string) =>
+        process.stdout.write(`${COLOR.cyan}${content}${COLOR.reset}`)
+      )
+
+      // trick to keep console output
+      console.log()
+      question = await ask(newQuestion)
     }
 
     rl.close()
