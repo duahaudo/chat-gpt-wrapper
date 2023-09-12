@@ -1,9 +1,4 @@
-import { Stream } from 'stream'
-
-import 'dotenv/config'
-import axios from 'axios'
 import readline from 'readline'
-
 import OpenAIWrapper from './helper/openAI'
 
 // Define the colors
@@ -17,20 +12,10 @@ enum COLOR {
   cyan = '\u001b[36m',
 }
 
-enum COMMAND {
-  newChat = 'new',
-}
-
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
-})
-
-const http = axios.create({
-  baseURL: 'https://api.openai.com/v1/',
-  headers: {
-    Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-  },
+  terminal: false,
 })
 
 const ask = (question: string) => {
