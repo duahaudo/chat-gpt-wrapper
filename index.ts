@@ -3,7 +3,6 @@ import { Stream } from 'stream'
 import 'dotenv/config'
 import axios from 'axios'
 import readline from 'readline'
-import { createConversationStream } from './helper'
 
 import OpenAIWrapper from './helper/openAI'
 
@@ -46,6 +45,7 @@ const showLoading = () => {
   const spinnerChars = ['-  ', '\\  ', '|  ', '/  ']
 
   let spinnerIndex = 0
+  let isDestroyed = false
 
   const spinnerInterval = setInterval(() => {
     process.stdout.write('\r' + spinnerChars[spinnerIndex++])
@@ -53,64 +53,14 @@ const showLoading = () => {
   }, 100)
 
   // call some asynchronous function
-  return () => {
-    clearInterval(spinnerInterval)
-    process.stdout.clearLine(0) // Clear the console/terminal line
-    process.stdout.cursorTo(0)
-  }
-}
-
-interface Message {
-  role: string
-  content: string
-}
-const createMessage = (msg: string) => ({ role: 'user', content: msg })
-
-const getContentFromResponse = (response: any) => {
-  const { choices } = response as any
-  const { content, role } = (choices as any)[0].message
-  return { content, role }
-}
-
-const createConversation = async (firstMessage: string) => {
-  const history: any[] = []
-
-  const firstResponse = await askChatGPT([createMessage(firstMessage)])
-  history.push(getContentFromResponse(firstResponse))
-
-  return async (message: string) => {
-    history.push(createMessage(message))
-    const response = await askChatGPT([...history])
-    history.push(getContentFromResponse(response))
-
-    return response
-  }
-}
-
-const askChatGPT = async (message: Message[]) => {
-  return new Promise(async (resolve) => {
-    const clear = showLoading()
-    try {
-      const request = {
-        model: 'gpt-3.5-turbo',
-        stream: false,
-        messages: message,
-      }
-
-      const { data } = await http.post('chat/completions', request)
-      clear()
-
-      resolve(data)
-    } catch (error: any) {
-      if (error.response) {
-        console.log(error.response.status)
-        console.log(error.response.data)
-      } else {
-        console.log(error.message)
-      }
-      clear()
+  return (destroy: boolean) => {
+    if (!isDestroyed && !!destroy) {
+      clearInterval(spinnerInterval)
+      process.stdout.clearLine(0) // Clear the console/terminal line
+      process.stdout.cursorTo(0)
+      isDestroyed = destroy
     }
-  })
+  }
 }
 
 const display = (data: any) => {
@@ -126,14 +76,8 @@ const display = (data: any) => {
   }
 }
 
-const display2 = () => {
-  const source: string[] = []
-
-  return (text: string) => {
-    source.push(text)
-    const content = source.shift() || ''
-    process.stdout.write(`${COLOR.cyan}${content}${COLOR.reset}`)
-  }
+const displayResponse = (content: string) => {
+  process.stdout.write(`${COLOR.cyan}${content}${COLOR.reset}`)
 }
 
 const username = `Stiger`
@@ -151,12 +95,15 @@ const newQuestion: string = `\n❓`
       const firstChar = question[0]
       const isNewQuestion = firstChar !== '+'
 
+      const closeLoadingFn = showLoading()
+
       if (isNewQuestion) {
         helper = new OpenAIWrapper()
       }
-      await helper.prompt(isNewQuestion ? question.slice(1) : question, (content: string) =>
-        process.stdout.write(`${COLOR.cyan}${content}${COLOR.reset}`)
-      )
+      await helper.prompt(isNewQuestion ? question.slice(1) : question, (message: string) => {
+        closeLoadingFn(true)
+        displayResponse(message)
+      })
 
       // trick to keep console output
       console.log()
