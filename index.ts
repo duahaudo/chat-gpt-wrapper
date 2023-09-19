@@ -86,10 +86,6 @@ const newQuestion: string = `\n❓`
       const firstChar = question[0]
       const isNewQuestion = firstChar !== SYMBOL.continueConversation
       const isSystemMessage = firstChar === SYMBOL.systemMessage
-      console.log(
-        `🚀 SLOG (${new Date().toLocaleTimeString()}): ➡ ; ➡ isSystemMessage:`,
-        isSystemMessage
-      )
 
       const closeLoadingFn = !isSystemMessage ? showLoading() : null
 
