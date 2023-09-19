@@ -86,6 +86,10 @@ const newQuestion: string = `\n❓`
       const firstChar = question[0]
       const isNewQuestion = firstChar !== SYMBOL.continueConversation
       const isSystemMessage = firstChar === SYMBOL.systemMessage
+      console.log(
+        `🚀 SLOG (${new Date().toLocaleTimeString()}): ➡ ; ➡ isSystemMessage:`,
+        isSystemMessage
+      )
 
       const closeLoadingFn = !isSystemMessage ? showLoading() : null
 
@@ -104,7 +108,7 @@ const newQuestion: string = `\n❓`
         }
       } else {
         await helper.prompt(
-          question.replace(SYMBOL.continueConversation, ''),
+          question.replace(SYMBOL.continueConversation, '').replace(SYMBOL.systemMessage, ''),
           (message: string) => {
             closeLoadingFn && closeLoadingFn(true)
             displayResponse(message)

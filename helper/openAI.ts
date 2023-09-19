@@ -5,7 +5,10 @@ import fs from 'fs/promises'
 import path from 'path'
 
 class OpenAIWrapper {
-  private createMessage = (msg: string) => ({ role: 'system', content: msg })
+  private createMessage = (msg: string, isSystem?: boolean) => ({
+    role: isSystem ? 'system' : 'user',
+    content: msg,
+  })
   private history: any[] = []
 
   constructor() {
@@ -13,13 +16,8 @@ class OpenAIWrapper {
   }
 
   async prompt(msg: string, postMessageFn: (x: string) => void, isSystem?: boolean) {
-    this.history.push(this.createMessage(msg))
-
-    if (!isSystem) {
-      return this.askChatGPTStreamHandler([...this.history], postMessageFn)
-    }
-
-    return Promise.resolve('')
+    this.history.push(this.createMessage(msg, isSystem))
+    return this.askChatGPTStreamHandler([...this.history], postMessageFn)
   }
 
   getData(line: string) {
