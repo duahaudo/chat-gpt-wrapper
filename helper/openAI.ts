@@ -1,6 +1,6 @@
+import 'dotenv/config'
 import axios, { Message } from './axios'
 import { Stream } from 'stream'
-import 'dotenv/config'
 import fs from 'fs/promises'
 import path from 'path'
 
@@ -48,7 +48,10 @@ class OpenAIWrapper {
       const timestamp = new Date().toISOString() // Get current timestamp
       const logString = `${timestamp} ${jsonString}` // Prepend timestamp to JSON string
 
-      await fs.appendFile(path.join('./error.log'), logString + '\n') // Append log string to error.log file
+      await fs.appendFile(
+        process.env.ERROR_LOG_FILE || path.resolve('./error.log'),
+        logString + '\n'
+      ) // Append log string to error.log file
     } catch (error) {
       console.error('Error writing to error.log:', error)
     }
