@@ -20,7 +20,7 @@ class OpenAIWrapper {
     return this.askChatGPTStreamHandler([...this.history], postMessageFn)
   }
 
-  getData(line: string) {
+  getData(line: string, originalMessage: string) {
     if (!line.includes('data: [DONE]')) {
       const jsonString = line.substring(line.indexOf('{'), line.lastIndexOf('}') + 1)
       try {
@@ -30,17 +30,38 @@ class OpenAIWrapper {
 
         const message = JSON.parse(jsonString)
         const { choices } = message
+        // const choices = this.extractChoiceFromString(line)
         const { content, role } = choices[0].delta
 
         return { content, role }
       } catch {
         // track log
-        this.writeToErrorLog(jsonString)
+        this.writeToErrorLog(`${originalMessage} \n ${line}`)
         return { content: jsonString, role: 'assistant' }
       }
     }
 
     return {}
+  }
+
+  extractChoiceFromString(inputString: string) {
+    // Use regular expressions to find and extract the JSON data
+    const match = inputString.match(/"choices":\[(.*?)\]/)
+
+    if (match) {
+      const jsonString = `{"choices":[${match[1]}]}`
+
+      try {
+        const data = JSON.parse(jsonString)
+        if (Array.isArray(data.choices) && data.choices.length > 0) {
+          return data.choices[0] // Assuming there's only one choice
+        }
+      } catch (error) {
+        console.error('Error parsing JSON:', error)
+      }
+    }
+
+    return null // JSON data not found or invalid structure
   }
 
   private async writeToErrorLog(jsonString: string) {
@@ -59,7 +80,8 @@ class OpenAIWrapper {
 
   getStreamData(
     stream: Stream,
-    chunkHandler: (x: string) => void
+    chunkHandler: (x: string) => void,
+    originalMessage: string = ''
   ): Promise<{ content: string; role: string }> {
     return new Promise((resolve, reject) => {
       const data: { content: string; role: string } = { content: '', role: '' }
@@ -73,7 +95,7 @@ class OpenAIWrapper {
 
       stream.on('end', () => {
         for (const line of lines) {
-          const { content, role } = this.getData(line)
+          const { content, role } = this.getData(line, originalMessage)
 
           if (role) {
             data.role = role
@@ -93,11 +115,15 @@ class OpenAIWrapper {
     })
   }
 
-  pushStreamResponse(data: string, messageCallback: (message: string) => void) {
+  pushStreamResponse(
+    data: string,
+    messageCallback: (message: string) => void,
+    originalMessage: string
+  ) {
     const lines: string[] = data.split('\n').filter((line: string) => line.trim() !== '')
     try {
       for (const line of lines) {
-        const { content, role } = this.getData(line)
+        const { content, role } = this.getData(line, originalMessage)
 
         if (content) {
           messageCallback(content)
@@ -143,9 +169,12 @@ class OpenAIWrapper {
     return new Promise(async (resolve, reject) => {
       try {
         const streamResponse = await this.askChatGPTStream(code)
+        const message = code[code.length - 1].content
 
-        this.getStreamData(streamResponse, (data: string) =>
-          this.pushStreamResponse(data, postMessageFn)
+        this.getStreamData(
+          streamResponse,
+          (data: string) => this.pushStreamResponse(data, postMessageFn, message),
+          message
         )
           .catch((err) => console.error(err))
           .then((data) => resolve(data))
