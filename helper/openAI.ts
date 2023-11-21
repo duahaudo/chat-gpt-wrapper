@@ -4,15 +4,26 @@ import { Stream } from 'stream'
 import fs from 'fs/promises'
 import path from 'path'
 
+export enum MODEL {
+  'gpt-3.5-turbo' = 'gpt-3.5-turbo',
+  'gpt-4' = 'gpt-4'
+};
+
+
 class OpenAIWrapper {
   private createMessage = (msg: string, isSystem?: boolean) => ({
     role: isSystem ? 'system' : 'user',
     content: msg,
   })
   private history: any[] = []
+  private _model: MODEL = MODEL['gpt-3.5-turbo']
 
   constructor() {
     this.history = []
+  }
+
+  public setModel(model: MODEL) {
+    this._model = model
   }
 
   async prompt(msg: string, postMessageFn: (x: string) => void, isSystem?: boolean) {
@@ -137,9 +148,10 @@ class OpenAIWrapper {
 
   async askChatGPTStream(messages: Message[]): Promise<Stream> {
     return new Promise(async (resolve) => {
+      console.log(`🚀 SLOG (${new Date().toLocaleTimeString()}): ➡ OpenAIWrapper ➡ returnnewPromise ➡ request.this._model:`, this._model);
       try {
         const request = {
-          model: 'gpt-3.5-turbo',
+          model: this._model,
           stream: true,
           messages,
         }
