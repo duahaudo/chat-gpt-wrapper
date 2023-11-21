@@ -6,9 +6,8 @@ import path from 'path'
 
 export enum MODEL {
   'gpt-3.5-turbo' = 'gpt-3.5-turbo',
-  'gpt-4' = 'gpt-4'
-};
-
+  'gpt-4' = 'gpt-4',
+}
 
 class OpenAIWrapper {
   private createMessage = (msg: string, isSystem?: boolean) => ({
@@ -148,7 +147,7 @@ class OpenAIWrapper {
 
   async askChatGPTStream(messages: Message[]): Promise<Stream> {
     return new Promise(async (resolve) => {
-      console.log(`🚀 SLOG (${new Date().toLocaleTimeString()}): ➡ OpenAIWrapper ➡ returnnewPromise ➡ request.this._model:`, this._model);
+      console.log(`🤖 Model:`, this._model)
       try {
         const request = {
           model: this._model,
