@@ -1,16 +1,6 @@
 import readline from 'readline'
-import OpenAIWrapper, { MODEL } from './helper/openAI'
-
-// Define the colors
-enum COLOR {
-  reset = '\x1b[0m',
-  red = '\x1b[31m',
-  green = '\x1b[32m',
-  yellow = '\x1b[33m',
-  blue = '\x1b[34m',
-  magenta = '\u001b[35m',
-  cyan = '\u001b[36m',
-}
+import OpenAIWrapper from './helper/openAI'
+import { COLOR, MODEL } from './helper/constance'
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -75,63 +65,65 @@ enum SYMBOL {
 const username = `Stiger`
 const newQuestion: string = `\n❓`
 
-  ; (async () => {
-    try {
-      console.log(`\n🫡   Hello ${COLOR.cyan}${username}${COLOR.reset}`)
+;(async () => {
+  try {
+    console.log(`\n🫡   Hello ${COLOR.cyan}${username}${COLOR.reset}`)
 
-      let question: any = await ask(newQuestion)
-      let helper = new OpenAIWrapper()
+    let question: any = await ask(newQuestion)
+    let helper = new OpenAIWrapper()
 
-      while (!!question) {
-        // first character need to be `+` to continue conversation
-        const firstChar = question[0]
-        const isNewQuestion = firstChar !== SYMBOL.continueConversation
-        const isSystemMessage = firstChar === SYMBOL.systemMessage
+    while (!!question) {
+      // first character need to be `+` to continue conversation
+      let firstChar = question[0]
+      const isNewQuestion = firstChar !== SYMBOL.continueConversation
+      const isSystemMessage = firstChar === SYMBOL.systemMessage
 
-        const closeLoadingFn = !isSystemMessage ? showLoading() : null
+      const closeLoadingFn = !isSystemMessage ? showLoading() : null
 
-        if (isNewQuestion) {
-          helper = new OpenAIWrapper()
-        }
-
-        if (firstChar === SYMBOL.embeddedMessage) {
-          try {
-            const response = await helper.embed(question.replace(SYMBOL.embeddedMessage, ''))
-            closeLoadingFn && closeLoadingFn(true)
-            displayResponse(response)
-          } catch (error) {
-            closeLoadingFn && closeLoadingFn(true)
-            displayResponse((error as any).message)
-          }
-        } else {
-          if (firstChar === SYMBOL.gpt4Model) {
-            helper.setModel(MODEL['gpt-4'])
-          } else {
-            helper.setModel(MODEL['gpt-3.5-turbo'])
-          }
-
-          await helper.prompt(
-            question.replace(SYMBOL.continueConversation, '').replace(SYMBOL.systemMessage, ''),
-            (message: string) => {
-              closeLoadingFn && closeLoadingFn(true)
-              displayResponse(message)
-            },
-            isSystemMessage
-          )
-        }
-
-        // trick to keep console output
-        console.log()
-        question = await ask(newQuestion)
-      }
-
-      rl.close()
-    } catch (error: any) {
-      if (error.response) {
-        console.log(error.response.status)
-        console.log(error.response.data)
+      if (isNewQuestion) {
+        helper = new OpenAIWrapper()
       } else {
-        console.log(error.message)
+        firstChar = question[1]
       }
+
+      if (firstChar === SYMBOL.embeddedMessage) {
+        try {
+          const response = await helper.embed(question.replace(SYMBOL.embeddedMessage, ''))
+          closeLoadingFn && closeLoadingFn(true)
+          displayResponse(response)
+        } catch (error) {
+          closeLoadingFn && closeLoadingFn(true)
+          displayResponse((error as any).message)
+        }
+      } else {
+        if (firstChar === SYMBOL.gpt4Model) {
+          helper.setModel(MODEL['gpt-4'])
+        } else {
+          helper.setModel(MODEL['gpt-3.5-turbo'])
+        }
+
+        await helper.prompt(
+          question.replace(SYMBOL.continueConversation, '').replace(SYMBOL.systemMessage, ''),
+          (message: string) => {
+            closeLoadingFn && closeLoadingFn(true)
+            displayResponse(message)
+          },
+          isSystemMessage
+        )
+      }
+
+      // trick to keep console output
+      console.log()
+      question = await ask(newQuestion)
     }
-  })()
+
+    rl.close()
+  } catch (error: any) {
+    if (error.response) {
+      console.log(error.response.status)
+      console.log(error.response.data)
+    } else {
+      console.log(error.message)
+    }
+  }
+})()

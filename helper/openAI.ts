@@ -3,11 +3,8 @@ import axios, { Message } from './axios'
 import { Stream } from 'stream'
 import fs from 'fs/promises'
 import path from 'path'
-
-export enum MODEL {
-  'gpt-3.5-turbo' = 'gpt-3.5-turbo',
-  'gpt-4' = 'gpt-4',
-}
+import { getObject } from './getObject'
+import { COLOR, MODEL } from './constance'
 
 class OpenAIWrapper {
   private createMessage = (msg: string, isSystem?: boolean) => ({
@@ -38,10 +35,10 @@ class OpenAIWrapper {
           return { content: '', role: 'assistant' }
         }
 
-        const message = JSON.parse(jsonString)
-        const { choices } = message
+        const message = getObject(line)
+        const { choices, delta } = message
         // const choices = this.extractChoiceFromString(line)
-        const { content, role } = choices[0].delta
+        const { content, role } = delta || choices[0].delta
 
         return { content, role }
       } catch {
@@ -147,7 +144,7 @@ class OpenAIWrapper {
 
   async askChatGPTStream(messages: Message[]): Promise<Stream> {
     return new Promise(async (resolve) => {
-      console.log(`🤖 Model:`, this._model)
+      console.log(`${COLOR.yellow}🤖`, this._model, COLOR.reset)
       try {
         const request = {
           model: this._model,
