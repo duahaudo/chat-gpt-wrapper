@@ -52,7 +52,9 @@ const display = (data: any) => {
 }
 
 const displayResponse = (content: string) => {
-  process.stdout.write(`${COLOR.cyan}${content}${COLOR.reset}`)
+  if (!content.includes('data:')) {
+    process.stdout.write(`${COLOR.cyan}${content}${COLOR.reset}`)
+  }
 }
 
 enum SYMBOL {
