@@ -13,3 +13,9 @@ export enum MODEL {
   'gpt-3.5-turbo' = 'gpt-3.5-turbo',
   'gpt-4' = 'gpt-4',
 }
+
+export interface IPhotoResponse {
+  url?: string
+  b64_json?: string
+  revised_prompt: string
+}

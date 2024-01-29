@@ -4,7 +4,7 @@ import { Stream } from 'stream'
 import fs from 'fs/promises'
 import path from 'path'
 import { getObject } from './getObject'
-import { COLOR, MODEL } from './constance'
+import { COLOR, IPhotoResponse, MODEL } from './constance'
 
 class OpenAIWrapper {
   private createMessage = (msg: string, isSystem?: boolean) => ({
@@ -20,6 +20,12 @@ class OpenAIWrapper {
 
   public setModel(model: MODEL) {
     this._model = model
+  }
+
+  async drawImage(msg: string) {
+    const message = this.createMessage(msg, false)
+    this.history.push()
+    return this.askDallEGenerate(message.content)
   }
 
   async prompt(msg: string, postMessageFn: (x: string) => void, isSystem?: boolean) {
@@ -158,6 +164,33 @@ class OpenAIWrapper {
         })
 
         resolve(response.data as Stream)
+      } catch (error: any) {
+        if (error.response) {
+          console.log(error.response.status)
+          console.log(error.response.data)
+        } else {
+          console.log(error.message)
+        }
+      }
+    })
+  }
+
+  async askDallEGenerate(message: string): Promise<IPhotoResponse[]> {
+    return new Promise(async (resolve) => {
+      try {
+        const request = {
+          prompt: message,
+          n: 1,
+          model: 'dall-e-3',
+          quality: 'hd',
+          size: '1792x1024',
+          style: 'natural',
+          // response_format: 'b64_json',
+        }
+
+        const response = await axios.post('images/generations', request)
+
+        resolve(response.data.data as IPhotoResponse[])
       } catch (error: any) {
         if (error.response) {
           console.log(error.response.status)
