@@ -123,7 +123,7 @@ const newQuestion: string = `\n❓`
             displayResponse(revised_prompt + '\n')
             closeLoadingFn && closeLoadingFn(true)
 
-            displayResponse(url || '')
+            displayImage(url || '')
           } catch (error) {
             closeLoadingFn && closeLoadingFn(true)
             displayResponse((error as any).message)
