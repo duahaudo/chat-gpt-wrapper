@@ -182,7 +182,7 @@ class OpenAIWrapper {
           prompt: message,
           n: 1,
           model: 'dall-e-3',
-          quality: 'hd',
+          quality: 'standard',
           size: '1792x1024',
           style: 'natural',
           // response_format: 'b64_json',
