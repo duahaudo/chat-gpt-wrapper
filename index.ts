@@ -63,12 +63,11 @@ const displayImage = (url?: string) => {
 
   displayResponse(url)
 
-
-  const imgcat = spawn('imgcat', [url], { stdio: 'inherit' });
+  const imgcat = spawn('imgcat', [url], { stdio: 'inherit' })
 
   imgcat.on('error', (err) => {
-    console.error(`Failed to start imgcat: ${err}`);
-  });
+    console.error(`Failed to start imgcat: ${err}`)
+  })
 
   // imgcat.on('exit', (code) => {
   //   console.log(`imgcat exited with code ${code}`);
@@ -86,79 +85,81 @@ enum SYMBOL {
 const username = `Stiger`
 const newQuestion: string = `\n❓`
 
-  ; (async () => {
-    try {
-      console.log(`\n🫡   Hello ${COLOR.cyan}${username}${COLOR.reset}`)
+;(async () => {
+  try {
+    console.log(`\n🫡   Hello ${COLOR.cyan}${username}${COLOR.reset}`)
 
-      let question: any = await ask(newQuestion)
-      let helper = new OpenAIWrapper()
+    let question: any = await ask(newQuestion)
+    let helper = new OpenAIWrapper()
 
-      while (!!question) {
-        // first character need to be `&` to continue conversation
-        let firstChar = question[0]
-        const isNewQuestion = firstChar !== SYMBOL.continueConversation
-        const isSystemMessage = firstChar === SYMBOL.systemMessage
+    while (!!question) {
+      // first character need to be `&` to continue conversation
+      let firstChar = question[0]
+      const isNewQuestion = firstChar !== SYMBOL.continueConversation
+      const isSystemMessage = firstChar === SYMBOL.systemMessage
 
-        const closeLoadingFn = !isSystemMessage ? showLoading() : null
+      const closeLoadingFn = !isSystemMessage ? showLoading() : null
 
-        if (isNewQuestion) {
-          helper = new OpenAIWrapper()
-        } else {
-          firstChar = question[1]
-        }
-
-        if (firstChar === SYMBOL.embeddedMessage) {
-          try {
-            const response = await helper.embed(question.replace(SYMBOL.embeddedMessage, ''))
-            closeLoadingFn && closeLoadingFn(true)
-            displayResponse(response)
-          } catch (error) {
-            closeLoadingFn && closeLoadingFn(true)
-            displayResponse((error as any).message)
-          }
-        } else if (firstChar === SYMBOL.drawImage) {
-          try {
-            const [response] = await helper.drawImage(question.replace(SYMBOL.drawImage, ''))
-            const { url, revised_prompt } = response
-            displayResponse(revised_prompt + '\n')
-            closeLoadingFn && closeLoadingFn(true)
-
-            displayImage(url || '')
-          } catch (error) {
-            closeLoadingFn && closeLoadingFn(true)
-            displayResponse((error as any).message)
-          }
-        } else {
-          if (firstChar === SYMBOL.gpt4Model) {
-            helper.setModel(MODEL['gpt-4'])
-          } else {
-            helper.setModel(MODEL['gpt-3.5-turbo'])
-          }
-
-          await helper.prompt(
-            question.replace(SYMBOL.continueConversation, '').replace(SYMBOL.systemMessage, ''),
-            (message: string) => {
-              closeLoadingFn && closeLoadingFn(true)
-              displayResponse(message)
-            },
-            isSystemMessage
-          )
-        }
-
-        // trick to keep console output
-        console.log()
-        question = await ask(newQuestion)
-      }
-
-      rl.close()
-    } catch (error: any) {
-      if (error.response) {
-        console.log(error.response.status)
-        console.log(error.response.data)
+      if (isNewQuestion) {
+        helper = new OpenAIWrapper()
       } else {
-        console.log(error.message)
+        firstChar = question[1]
       }
+
+      if (firstChar === SYMBOL.embeddedMessage) {
+        try {
+          const response = await helper.embed(question.replace(SYMBOL.embeddedMessage, ''))
+          closeLoadingFn && closeLoadingFn(true)
+          displayResponse(response)
+        } catch (error) {
+          closeLoadingFn && closeLoadingFn(true)
+          displayResponse((error as any).message)
+        }
+      } else if (firstChar === SYMBOL.drawImage) {
+        try {
+          const [response] = await helper.drawImage(question.replace(SYMBOL.drawImage, ''))
+          const { url, revised_prompt } = response
+          displayResponse(revised_prompt)
+          console.log()
+          closeLoadingFn && closeLoadingFn(true)
+
+          displayImage(url || '')
+          console.log()
+        } catch (error) {
+          closeLoadingFn && closeLoadingFn(true)
+          displayResponse((error as any).message)
+        }
+      } else {
+        if (firstChar === SYMBOL.gpt4Model) {
+          helper.setModel(MODEL['gpt-4'])
+        } else {
+          helper.setModel(MODEL['gpt-3.5-turbo'])
+        }
+
+        await helper.prompt(
+          question.replace(SYMBOL.continueConversation, '').replace(SYMBOL.systemMessage, ''),
+          (message: string) => {
+            closeLoadingFn && closeLoadingFn(true)
+            displayResponse(message)
+          },
+          isSystemMessage
+        )
+      }
+
+      // trick to keep console output
+      console.log()
+      question = await ask(newQuestion)
     }
-  })()
+
+    rl.close()
+  } catch (error: any) {
+    if (error.response) {
+      console.log(error.response.status)
+      console.log(error.response.data)
+    } else {
+      console.log(error.message)
+    }
+  }
+})()
 
 // displayImage(`https://pbs.twimg.com/media/GFBlqe6aQAAqufn\?format\=jpg\&name\=large`)
