@@ -14,6 +14,8 @@ class OpenAIWrapper {
   private history: any[] = []
   private _model: MODEL = MODEL['gpt-3.5-turbo']
 
+  private previousMessage: string = '';
+
   constructor() {
     this.history = []
   }
@@ -34,8 +36,19 @@ class OpenAIWrapper {
   }
 
   getData(line: string, originalMessage: string) {
+    if (line.startsWith('data: ')) {
+      const message = this.previousMessage
+      this.previousMessage = line
+      return this.executeLineData(message, originalMessage)
+    } else {
+      this.previousMessage += line
+      return {}
+    }
+  }
+
+  executeLineData(line: string, originalMessage: string) {
     if (!line.includes('data: [DONE]')) {
-      const jsonString = line.substring(line.indexOf('{'), line.lastIndexOf('}') + 1)
+      const jsonString = line.replace('data: ', '') // line.substring(line.indexOf('{'), line.lastIndexOf('}') + 1)
       try {
         if (!jsonString) {
           return { content: '', role: 'assistant' }

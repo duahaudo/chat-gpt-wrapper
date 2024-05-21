@@ -11,7 +11,7 @@ export enum COLOR {
 
 export enum MODEL {
   'gpt-3.5-turbo' = 'gpt-3.5-turbo',
-  'gpt-4' = 'gpt-4-turbo-preview',
+  'gpt-4' = 'gpt-4o',
 }
 
 export interface IPhotoResponse {

@@ -47,7 +47,7 @@
   "resolved" "https://registry.npmjs.org/@tsconfig/node16/-/node16-1.0.4.tgz"
   "version" "1.0.4"
 
-"@types/node@*", "@types/node@^18.16.1":
+"@types/node@^18.16.1":
   "integrity" "sha512-DZxSZWXxFfOlx7k7Rv4LAyiMroaxa3Ly/7OOzZO8cBNho0YzAi4qlbrx8W27JGqG57IgR/6J7r+nOJWw6kcvZA=="
   "resolved" "https://registry.npmjs.org/@types/node/-/node-18.16.1.tgz"
   "version" "18.16.1"
@@ -178,7 +178,7 @@
     "v8-compile-cache-lib" "^3.0.1"
     "yn" "3.1.1"
 
-"typescript@^5.0.4", "typescript@>=2.7":
+"typescript@^5.0.4":
   "integrity" "sha512-cW9T5W9xY37cc+jfEnaUvX91foxtHkza3Nw3wkoF4sSlKn0MONdkdEndig/qPBWXNkmplh3NzayQzCiHM4/hqw=="
   "resolved" "https://registry.npmjs.org/typescript/-/typescript-5.0.4.tgz"
   "version" "5.0.4"
