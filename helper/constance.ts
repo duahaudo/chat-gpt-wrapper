@@ -11,6 +11,7 @@ export enum COLOR {
 
 export enum MODEL {
   'gpt-3.5-turbo' = 'gpt-3.5-turbo',
+  'Codestral-22B' = 'lmstudio-community/Codestral-22B-v0.1-GGUF/Codestral-22B-v0.1-Q5_K_M.gguf',
   'gpt-4' = 'gpt-4o',
 }
 

@@ -133,7 +133,7 @@ const newQuestion: string = `\n❓`
         if (firstChar === SYMBOL.gpt4Model) {
           helper.setModel(MODEL['gpt-4'])
         } else {
-          helper.setModel(MODEL['gpt-3.5-turbo'])
+          helper.setModel(MODEL['Codestral-22B'])
         }
 
         await helper.prompt(

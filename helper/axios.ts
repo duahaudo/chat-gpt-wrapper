@@ -11,7 +11,8 @@ class CustomAxios {
 
   constructor() {
     this.instance = axios.create({
-      baseURL: 'https://api.openai.com/v1/',
+      // baseURL: 'https://api.openai.com/v1/',
+      baseURL: 'http://localhost:1234/v1/',
       headers: {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
