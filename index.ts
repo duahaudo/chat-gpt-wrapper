@@ -91,6 +91,7 @@ const newQuestion: string = `\n❓`
 
     let question: any = await ask(newQuestion)
     let helper = new OpenAIWrapper()
+    let _systemMessage = ''
 
     while (!!question) {
       // first character need to be `&` to continue conversation
@@ -98,10 +99,14 @@ const newQuestion: string = `\n❓`
       const isNewQuestion = firstChar !== SYMBOL.continueConversation
       const isSystemMessage = firstChar === SYMBOL.systemMessage
 
+      if (isSystemMessage) {
+        _systemMessage = question.replace(SYMBOL.systemMessage, '').trim()
+      }
+
       const closeLoadingFn = !isSystemMessage ? showLoading() : null
 
       if (isNewQuestion) {
-        helper = new OpenAIWrapper()
+        helper = new OpenAIWrapper(_systemMessage)
       } else {
         firstChar = question[1]
       }
@@ -136,14 +141,18 @@ const newQuestion: string = `\n❓`
           helper.setModel(MODEL['Codestral-22B'])
         }
 
-        await helper.prompt(
-          question.replace(SYMBOL.continueConversation, '').replace(SYMBOL.systemMessage, ''),
-          (message: string) => {
-            closeLoadingFn && closeLoadingFn(true)
-            displayResponse(message)
-          },
-          isSystemMessage
-        )
+        if (!isSystemMessage) {
+          await helper.prompt(
+            question.replace(SYMBOL.continueConversation, ''),
+            (message: string) => {
+              closeLoadingFn && closeLoadingFn(true)
+              displayResponse(message)
+            },
+            false
+          )
+        } else {
+          closeLoadingFn && closeLoadingFn(true)
+        }
       }
 
       // trick to keep console output

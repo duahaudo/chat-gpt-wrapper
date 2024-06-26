@@ -12,12 +12,16 @@ class OpenAIWrapper {
     content: msg,
   })
   private history: any[] = []
-  private _model: MODEL = MODEL['gpt-3.5-turbo']
+  private _model: MODEL = MODEL['Codestral-22B']
 
-  private previousMessage: string = '';
+  private previousMessage: string = ''
 
-  constructor() {
+  constructor(systemMessage: string = '') {
     this.history = []
+
+    if (systemMessage) {
+      this.history.push(this.createMessage(systemMessage, true))
+    }
   }
 
   public setModel(model: MODEL) {
