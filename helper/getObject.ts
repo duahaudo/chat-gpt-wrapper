@@ -35,7 +35,11 @@ export const getObject = (input: string): any => {
 
     return fixJsonString ? JSON.parse(fixJsonString) : {}
   } catch (e) {
-    console.log(`🚀 SLOG (${new Date().toLocaleTimeString()}): ➡ getObject ➡ input:`, input);
+    console.log(`🚀 SLOG (${new Date().toLocaleTimeString()}): ➡ getObject ➡ input:`, input)
     console.log(`🚀 SLOG (${new Date().toLocaleTimeString()}): ➡ getObject ➡ e:`, e)
   }
+}
+
+export const getEnumKeyByValue = (value: any, enumType: any): string | undefined => {
+  return Object.keys(enumType).find((key) => enumType[key] === value)
 }

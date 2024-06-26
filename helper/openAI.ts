@@ -1,10 +1,11 @@
 import 'dotenv/config'
-import axios, { Message } from './axios'
+import { Message, createInstance } from './axios'
 import { Stream } from 'stream'
 import fs from 'fs/promises'
 import path from 'path'
-import { getObject } from './getObject'
+import { getEnumKeyByValue, getObject } from './getObject'
 import { COLOR, IPhotoResponse, MODEL } from './constance'
+import { AxiosInstance } from 'axios'
 
 class OpenAIWrapper {
   private createMessage = (msg: string, isSystem?: boolean) => ({
@@ -13,11 +14,13 @@ class OpenAIWrapper {
   })
   private history: any[] = []
   private _model: MODEL = MODEL['Codestral-22B']
+  private axios: AxiosInstance = createInstance(MODEL['Codestral-22B'])
 
   private previousMessage: string = ''
 
-  constructor(systemMessage: string = '') {
+  constructor(model: MODEL, systemMessage: string = '') {
     this.history = []
+    this.setModel(model)
 
     if (systemMessage) {
       this.history.push(this.createMessage(systemMessage, true))
@@ -26,6 +29,7 @@ class OpenAIWrapper {
 
   public setModel(model: MODEL) {
     this._model = model
+    this.axios = createInstance(model)
   }
 
   async drawImage(msg: string) {
@@ -36,6 +40,10 @@ class OpenAIWrapper {
 
   async prompt(msg: string, postMessageFn: (x: string) => void, isSystem?: boolean) {
     this.history.push(this.createMessage(msg, isSystem))
+    console.log(
+      `🚀 SLOG (${new Date().toLocaleTimeString()}): ➡ OpenAIWrapper ➡ prompt ➡ this.history:`,
+      this.history
+    )
     return this.askChatGPTStreamHandler([...this.history], postMessageFn)
   }
 
@@ -167,15 +175,18 @@ class OpenAIWrapper {
 
   async askChatGPTStream(messages: Message[]): Promise<Stream> {
     return new Promise(async (resolve) => {
-      console.log(`${COLOR.yellow}🤖`, this._model, COLOR.reset)
+      console.log(`${COLOR.yellow}🤖`, getEnumKeyByValue(this._model, MODEL), COLOR.reset)
       try {
         const request = {
           model: this._model,
           stream: true,
           messages,
+          stream_options: {
+            include_usage: false,
+          },
         }
 
-        const response = await axios.post('chat/completions', request, {
+        const response = await this.axios.post('chat/completions', request, {
           timeout: 1000 * 60 * 2,
           responseType: 'stream',
         })
@@ -205,7 +216,7 @@ class OpenAIWrapper {
           // response_format: 'b64_json',
         }
 
-        const response = await axios.post('images/generations', request)
+        const response = await this.axios.post('images/generations', request)
 
         resolve(response.data.data as IPhotoResponse[])
       } catch (error: any) {
@@ -257,7 +268,7 @@ class OpenAIWrapper {
       model: 'text-embedding-ada-002',
     }
 
-    return axios.post(endpoint, requestBody).catch((err) => console.error(err))
+    return this.axios.post(endpoint, requestBody).catch((err) => console.error(err))
   }
 
   async embed(filePath: string) {

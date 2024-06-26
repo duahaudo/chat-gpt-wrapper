@@ -17,6 +17,33 @@ const ask = (question: string): Promise<string> => {
   })
 }
 
+const selectModel = async () => {
+  const question = `\n${COLOR.yellow}Select AI Model:${COLOR.reset}\n`
+  const choices = Object.keys(MODEL)
+
+  console.log(question)
+  choices.forEach((choice, index) => {
+    console.log(`${index + 1}. ${choice}`)
+  })
+
+  return new Promise((resolve) => {
+    rl.question(
+      `\n${COLOR.yellow}Please enter the number of your choice: ${COLOR.reset}(default: 1) `,
+      (answer) => {
+        const choiceIndex = answer === '' ? 0 : parseInt(answer) - 1
+        if (choiceIndex >= 0 && choiceIndex < choices.length) {
+          console.log(
+            `\n${COLOR.yellow}Selected model: ${COLOR.cyan}${choices[choiceIndex]}${COLOR.reset}`
+          )
+          resolve(choices[choiceIndex])
+        } else {
+          resolve(selectModel())
+        }
+      }
+    )
+  })
+}
+
 const showLoading = () => {
   const spinnerChars = ['-  ', '\\  ', '|  ', '/  ']
 
@@ -88,11 +115,14 @@ const newQuestion: string = `\n❓`
 ;(async () => {
   try {
     console.log(`\n🫡   Hello ${COLOR.cyan}${username}${COLOR.reset}`)
+    let model = await selectModel()
+    // @ts-ignore
+    let helper = new OpenAIWrapper(MODEL[model])
 
-    let question: any = await ask(newQuestion)
-    let helper = new OpenAIWrapper()
+    // keep system message in memory
     let _systemMessage = ''
 
+    let question: any = await ask(newQuestion)
     while (!!question) {
       // first character need to be `&` to continue conversation
       let firstChar = question[0]
@@ -105,43 +135,45 @@ const newQuestion: string = `\n❓`
 
       const closeLoadingFn = !isSystemMessage ? showLoading() : null
 
-      if (isNewQuestion) {
-        helper = new OpenAIWrapper(_systemMessage)
-      } else {
-        firstChar = question[1]
-      }
+      if (firstChar === SYMBOL.gpt4Model) {
+        closeLoadingFn && closeLoadingFn(true)
+        // select model again
+        let model = await selectModel()
 
-      if (firstChar === SYMBOL.embeddedMessage) {
-        try {
-          const response = await helper.embed(question.replace(SYMBOL.embeddedMessage, ''))
-          closeLoadingFn && closeLoadingFn(true)
-          displayResponse(response)
-        } catch (error) {
-          closeLoadingFn && closeLoadingFn(true)
-          displayResponse((error as any).message)
-        }
-      } else if (firstChar === SYMBOL.drawImage) {
-        try {
-          const [response] = await helper.drawImage(question.replace(SYMBOL.drawImage, ''))
-          const { url, revised_prompt } = response
-          displayResponse(revised_prompt)
-          console.log()
-          closeLoadingFn && closeLoadingFn(true)
-
-          displayImage(url || '')
-          console.log()
-        } catch (error) {
-          closeLoadingFn && closeLoadingFn(true)
-          displayResponse((error as any).message)
-        }
+        // @ts-ignore
+        helper.setModel(MODEL[model])
       } else {
-        if (firstChar === SYMBOL.gpt4Model) {
-          helper.setModel(MODEL['gpt-4'])
+        if (isNewQuestion) {
+          // @ts-ignore
+          helper = new OpenAIWrapper(MODEL[model], _systemMessage)
         } else {
-          helper.setModel(MODEL['Codestral-22B'])
+          firstChar = question[1]
         }
 
-        if (!isSystemMessage) {
+        if (firstChar === SYMBOL.embeddedMessage) {
+          try {
+            const response = await helper.embed(question.replace(SYMBOL.embeddedMessage, ''))
+            closeLoadingFn && closeLoadingFn(true)
+            displayResponse(response)
+          } catch (error) {
+            closeLoadingFn && closeLoadingFn(true)
+            displayResponse((error as any).message)
+          }
+        } else if (firstChar === SYMBOL.drawImage) {
+          try {
+            const [response] = await helper.drawImage(question.replace(SYMBOL.drawImage, ''))
+            const { url, revised_prompt } = response
+            displayResponse(revised_prompt)
+            console.log()
+            closeLoadingFn && closeLoadingFn(true)
+
+            displayImage(url || '')
+            console.log()
+          } catch (error) {
+            closeLoadingFn && closeLoadingFn(true)
+            displayResponse((error as any).message)
+          }
+        } else if (!isSystemMessage) {
           await helper.prompt(
             question.replace(SYMBOL.continueConversation, ''),
             (message: string) => {
