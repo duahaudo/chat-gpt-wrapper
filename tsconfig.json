@@ -1,13 +1,15 @@
 {
   "compilerOptions": {
-    /* Language and Environment */
-    "target": "es6",
-    /* Modules */
-    "module": "es2022",
+    "module": "ESNext",
+    "target": "ESNext",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "moduleResolution": "node",
-    "skipLibCheck": true /* Skip type checking all .d.ts files. */
-  }
+    "moduleResolution": "Node",
+    "skipLibCheck": true /* Skip type checking all .d.ts files. */,
+    "outDir": "./dist",
+    "rootDir": "."
+  },
+  "exclude": ["node_modules"],
+  "include": ["**/*.ts"]
 }
