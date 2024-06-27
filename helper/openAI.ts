@@ -40,10 +40,6 @@ class OpenAIWrapper {
 
   async prompt(msg: string, postMessageFn: (x: string) => void, isSystem?: boolean) {
     this.history.push(this.createMessage(msg, isSystem))
-    console.log(
-      `🚀 SLOG (${new Date().toLocaleTimeString()}): ➡ OpenAIWrapper ➡ prompt ➡ this.history:`,
-      this.history
-    )
     return this.askChatGPTStreamHandler([...this.history], postMessageFn)
   }
 
