@@ -13,8 +13,8 @@ class OpenAIWrapper {
     content: msg,
   })
   private history: any[] = []
-  private _model: MODEL = MODEL['Codestral-22B']
-  private axios: AxiosInstance = createInstance(MODEL['Codestral-22B'])
+  private _model: MODEL = MODEL['gpt-3.5-turbo']
+  private axios: AxiosInstance = createInstance(MODEL['gpt-3.5-turbo'])
 
   private previousMessage: string = ''
 
