@@ -41,5 +41,6 @@ export const getObject = (input: string): any => {
 }
 
 export const getEnumKeyByValue = (value: any, enumType: any): string | undefined => {
-  return Object.keys(enumType).find((key) => enumType[key] === value)
+  const name = Object.keys(enumType).find((key) => enumType[key] === value)
+  return name || value
 }
