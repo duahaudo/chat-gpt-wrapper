@@ -13,8 +13,9 @@ class OpenAIWrapper {
     content: msg,
   })
   private history: any[] = []
-  private _model: MODEL = MODEL['gpt-3.5-turbo']
-  private axios: AxiosInstance = createInstance(MODEL['gpt-3.5-turbo'])
+  private _defaultModel: keyof typeof MODEL = Object.keys(MODEL)[0] as keyof typeof MODEL
+  private _model: MODEL = MODEL[this._defaultModel]
+  private axios: AxiosInstance = createInstance(MODEL[this._defaultModel])
 
   private previousMessage: string = ''
 
