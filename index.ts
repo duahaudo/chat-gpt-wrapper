@@ -1,21 +1,14 @@
-import readline from 'readline'
 import OpenAIWrapper from './helper/openAI'
 import { COLOR, MODEL } from './helper/constance'
 import { spawn } from 'child_process'
 import axios from 'axios'
+import EnquirerWrapper from './helper/enquirer'
+const rl2 = new EnquirerWrapper()
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-  terminal: true,
-})
-
-const ask = (question: string): Promise<string> => {
-  return new Promise((resolve) => {
-    rl.question(`${COLOR.green}${question} `, (answer: string) => {
-      resolve(answer)
-    })
-  })
+const ask = async (question: string): Promise<string> => {
+  return rl2
+    .getMultilineInput(`${COLOR.green}${question} ${COLOR.purple}`)
+    .then((response) => response.trim())
 }
 
 const extractModelName = (input: string): string | null => {
@@ -32,32 +25,40 @@ const getLocalModel = async () => {
   return Object.fromEntries(model)
 }
 
-const selectModel = async (models: Record<string, string>) => {
-  const question = `\n${COLOR.yellow}Select AI Model:${COLOR.reset}\n`
-
+const selectModel = async (models: Record<string, string>): Promise<string> => {
   const choices = Object.keys(models)
+  const selectedModel: string = await rl2.selectOptionFromList(
+    `${COLOR.yellow}Select AI Model: ${COLOR.reset} `,
+    choices
+  )
+  return selectedModel
+}
 
-  console.log(question)
-  choices.forEach((choice, index) => {
-    console.log(`${index + 1}. ${choice}`)
-  })
+enum SYMBOL {
+  continueConversation = '&',
+  systemMessage = '$',
+  embeddedMessage = '@',
+  selectModelCommand = '#',
+  drawImage = '!',
+  newConversation = ' ',
+  newLine = `\n`,
+}
 
-  return new Promise((resolve) => {
-    rl.question(
-      `\n${COLOR.yellow}Please enter the number of your choice: ${COLOR.reset}(default: 1) `,
-      (answer) => {
-        const choiceIndex = answer === '' ? 0 : parseInt(answer) - 1
-        if (choiceIndex >= 0 && choiceIndex < choices.length) {
-          console.log(
-            `\n${COLOR.yellow}Selected model: ${COLOR.cyan}${choices[choiceIndex]}${COLOR.reset}`
-          )
-          resolve(choices[choiceIndex])
-        } else {
-          resolve(selectModel(models))
-        }
-      }
-    )
-  })
+const selectNextQuestion = async (): Promise<SYMBOL> => {
+  const choices = [
+    { name: 'Cont', value: SYMBOL.continueConversation },
+    { name: 'New', value: SYMBOL.newConversation },
+    { name: 'System', value: SYMBOL.systemMessage },
+    { name: 'Select model', value: SYMBOL.selectModelCommand },
+    { name: 'Exit', value: SYMBOL.newLine },
+  ]
+
+  const item: string = await rl2.selectOptionFromList(
+    `${COLOR.yellow}Action: ${COLOR.reset} `,
+    choices
+  )
+  const choice = choices.find((choice: any) => choice.name === item)
+  return (choice !== undefined ? choice.value : choice) as SYMBOL
 }
 
 const showLoading = () => {
@@ -117,16 +118,8 @@ const displayImage = (url?: string) => {
   // });
 }
 
-enum SYMBOL {
-  continueConversation = '&',
-  systemMessage = '$',
-  embeddedMessage = '@',
-  gpt4Model = '#',
-  drawImage = '!',
-}
-
 const username = `Stiger`
-const newQuestion: string = `\n❓`
+const newQuestion: string = `${COLOR.yellow}Question: ${COLOR.reset}\n`
 
 ;(async () => {
   try {
@@ -143,7 +136,8 @@ const newQuestion: string = `\n❓`
     let _systemMessage = ''
 
     let question: any = await ask(newQuestion)
-    while (!!question) {
+
+    while (!!question && question !== '\n') {
       // first character need to be `&` to continue conversation
       let firstChar = question[0]
       const isNewQuestion = firstChar !== SYMBOL.continueConversation
@@ -155,7 +149,7 @@ const newQuestion: string = `\n❓`
 
       const closeLoadingFn = !isSystemMessage ? showLoading() : null
 
-      if (firstChar === SYMBOL.gpt4Model) {
+      if (firstChar === SYMBOL.selectModelCommand) {
         closeLoadingFn && closeLoadingFn(true)
         // select model again
         model = await selectModel(ALL_MODEL)
@@ -209,10 +203,14 @@ const newQuestion: string = `\n❓`
 
       // trick to keep console output
       console.log()
-      question = await ask(newQuestion)
+      const next = await selectNextQuestion()
+      if ([SYMBOL.selectModelCommand, SYMBOL.newLine].includes(next)) {
+        question = `${next?.trim()}`
+      } else {
+        const question2 = await ask(newQuestion)
+        question = `${next?.trim()} ${question2}`
+      }
     }
-
-    rl.close()
   } catch (error: any) {
     if (error.response) {
       console.log(error.response.status)

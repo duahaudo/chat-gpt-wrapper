@@ -7,6 +7,7 @@ export enum COLOR {
   blue = '\x1b[34m',
   magenta = '\u001b[35m',
   cyan = '\u001b[36m',
+  purple = '\u001b[35m',
 }
 
 export enum MODEL {
