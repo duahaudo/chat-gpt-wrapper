@@ -20,6 +20,9 @@ const extractModelName = (input: string): string | null => {
 const getLocalModel = async () => {
   const model = await axios.get('http://localhost:1234/v1/models').then(({ data }) => {
     return data.data.map((model: any) => [extractModelName(model.id) || model.id, model.id])
+  }).catch(() => {
+    console.error("LLM does not start")
+    return []
   })
 
   return Object.fromEntries(model)
