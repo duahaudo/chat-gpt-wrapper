@@ -13,6 +13,9 @@ export enum COLOR {
 export enum MODEL {
   'gpt-4o-mini' = 'gpt-4o-mini',
   'gpt-4o' = 'gpt-4o',
+  'gpt-o1' = 'gpt-o1',
+  'gpt-o1-mini' = 'gpt-o1-mini',
+  'gpt-o3-mini' = 'gpt-o3-mini',
 }
 
 export interface IPhotoResponse {

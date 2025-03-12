@@ -86,14 +86,13 @@ const showLoading = () => {
   }
 }
 
+// FIX: Safely handle data.usage
 const display = (data: any) => {
-  const {
-    choices,
-    usage: { total_tokens },
-  } = data
+  const { choices } = data
+  const total_tokens = data?.usage?.total_tokens || 0
 
   console.log(`\n🙇 ${COLOR.magenta}${total_tokens} tokens used`)
-  for (let { message } of choices) {
+  for (let { message } of choices || []) {
     const { content } = message
     console.log(`${COLOR.cyan}${content}${COLOR.reset}`)
   }
@@ -110,15 +109,11 @@ const displayImage = (url?: string) => {
 
   displayResponse(url)
 
-  const imgcat = spawn('imgcat', [url], { stdio: 'inherit' })
+  const imgCat = spawn('imgcat', [url], { stdio: 'inherit' })
 
-  imgcat.on('error', (err) => {
+  imgCat.on('error', (err) => {
     console.error(`Failed to start imgcat: ${err}`)
   })
-
-  // imgcat.on('exit', (code) => {
-  //   console.log(`imgcat exited with code ${code}`);
-  // });
 }
 
 const username = `Stiger`
@@ -135,13 +130,11 @@ const newQuestion: string = `${COLOR.yellow}Question: ${COLOR.reset}\n`
     // @ts-ignore
     let helper = new OpenAIWrapper(ALL_MODEL[model])
 
-    // keep system message in memory
     let _systemMessage = ''
 
     let question: any = await ask(newQuestion)
 
     while (!!question && question !== '\n') {
-      // first character need to be `&` to continue conversation
       let firstChar = question[0]
       const isNewQuestion = firstChar !== SYMBOL.continueConversation
       const isSystemMessage = firstChar === SYMBOL.systemMessage
@@ -154,7 +147,6 @@ const newQuestion: string = `${COLOR.yellow}Question: ${COLOR.reset}\n`
 
       if (firstChar === SYMBOL.selectModelCommand) {
         closeLoadingFn && closeLoadingFn(true)
-        // select model again
         model = await selectModel(ALL_MODEL)
 
         // @ts-ignore
@@ -204,7 +196,6 @@ const newQuestion: string = `${COLOR.yellow}Question: ${COLOR.reset}\n`
         }
       }
 
-      // trick to keep console output
       console.log()
       const next = await selectNextQuestion()
       if ([SYMBOL.selectModelCommand, SYMBOL.newLine].includes(next)) {
@@ -224,4 +215,4 @@ const newQuestion: string = `${COLOR.yellow}Question: ${COLOR.reset}\n`
   }
 })()
 
-// displayImage(`https://pbs.twimg.com/media/GFBlqe6aQAAqufn\?format\=jpg\&name\=large`)
+// displayImage(`https://pbs.twimg.com/media/GFBlqe6aQAAqufn?format=jpg&name=large`)
